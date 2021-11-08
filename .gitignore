@@ -1,0 +1,8 @@
+# Nix artifacts
+result*
+
+# JVM artifacts
+.cpcache
+
+# clojure-lsp artifacts
+.lsp
