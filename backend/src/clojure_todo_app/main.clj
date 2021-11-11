@@ -1,12 +1,10 @@
 (ns clojure-todo-app.main
   "TODO list application backend main module"
   (:require
-    [clojure.string :as string]
-    [clojure.tools.cli :refer [parse-opts]]
     [org.httpkit.server :refer [run-server]]
     [compojure.core :refer [defroutes GET]]
     [compojure.route :as route]
-    [clojure-todo-app.utils :refer [flip]]
+    [clojure-todo-app.cli-args-parsing :refer [cli-interface cli-action]]
     )
   (:gen-class))
 
@@ -22,40 +20,10 @@
   (run-server all-routes {:port port})
   )
 
-(def cli-options
-  [["-p" "--port PORT" "Port number"
-   :default 8080
-   :parse-fn #(Integer/parseInt %)
-   :validate [#(>= % 0) "Port must be greater or equal to zero"]
-   ]
-
-   ["-h" "--help"]
-   ])
-
-(defn cli-opts-parsing-failure
-  [errors]
-  (.println *err*
-    (->> errors
-      (cons "Arguments parsing failure:")
-      ((flip concat) ["" "Call the app with “--help” to see usage info."])
-      (string/join \newline)
+(def -main
+  (partial cli-action
+    (reify cli-interface
+      (smoke-test [this] (println "Smoke test passed"))
+      (run-backend [this options] (run-app (:port options)))
       ))
-  (System/exit 1)
-  )
-
-(defn show-usage [summary]
-  (println "Supported arguments:")
-  (println summary)
-  )
-
-(defn -main [& args]
-  (let [opts (parse-opts args cli-options)]
-    (cond
-      (not= (:errors opts) nil) (cli-opts-parsing-failure (:errors opts))
-      (:help (:options opts)) (show-usage (:summary opts))
-      (= (:arguments opts) ["smoke-test"]) (println "Smoke test passed")
-      (= (:arguments opts) []) (run-app (:port (:options opts)))
-      :else (cli-opts-parsing-failure (map pr-str (:arguments opts)))
-      )
-    )
   )
