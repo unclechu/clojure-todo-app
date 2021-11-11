@@ -2,16 +2,10 @@
   "TODO list application backend main module"
   (:require
     [org.httpkit.server :refer [run-server]]
-    [compojure.core :refer [defroutes GET]]
-    [compojure.route :as route]
     [clojure-todo-app.cli-args-parsing :refer [cli-interface cli-action]]
+    [clojure-todo-app.routes :refer [all-routes]]
     )
   (:gen-class))
-
-(defroutes all-routes
-  (GET "/" [] "hello world")
-  (route/not-found "Error 404. Page not found.")
-  )
 
 (defn run-app [port]
   (assert (number? port) "Port is not a number")
