@@ -12,7 +12,7 @@ I recommend to use [Nix](https://nixos.org/guides/install-nix.html).
 Technically, if you have Clojure installed you could just run:
 
 ``` sh
-clojure -M backend/src/main.clj --help
+(cd backend && clojure -M -m clojure-todo-app.main --help)
 ```
 
 ### Using Nix
@@ -21,7 +21,7 @@ To build and run the app you can just do:
 
 ``` sh
 nix-build
-result/bin/clojure-todo-app-run-backend --help
+result/bin/clojure-todo-app-backend --help
 ```
 
 #### Build the environment
@@ -40,7 +40,7 @@ so you can just build it first and then run:
 
 ``` sh
 nix-build -A clj2nix -o result-clj2nix
-result-clj2nix/bin/clj2nix deps.edn deps.nix
+result-clj2nix/bin/clj2nix backend/deps.edn backend/deps.nix
 ```
 
 ## Development

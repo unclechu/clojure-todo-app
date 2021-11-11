@@ -1,11 +1,12 @@
-(ns clojure-todo-app
-  "TODO list application written in Clojure"
+(ns clojure-todo-app.main
+  "TODO list application backend main module"
   (:require
     [clojure.string :as string]
     [clojure.tools.cli :refer [parse-opts]]
     [org.httpkit.server :refer [run-server]]
     [compojure.core :refer [defroutes GET]]
     [compojure.route :as route]
+    [clojure-todo-app.utils :refer [flip]]
     )
   (:gen-class))
 
@@ -31,8 +32,6 @@
    ["-h" "--help"]
    ])
 
-(defn flip [f] (fn [a b] (f b a)))
-
 (defn cli-opts-parsing-failure
   [errors]
   (.println *err*
@@ -49,12 +48,14 @@
   (println summary)
   )
 
-(let [opts (parse-opts *command-line-args* cli-options)]
-  (cond
-    (not= (:errors opts) nil) (cli-opts-parsing-failure (:errors opts))
-    (:help (:options opts)) (show-usage (:summary opts))
-    (= (:arguments opts) ["smoke-test"]) (println "Smoke test passed")
-    (= (:arguments opts) []) (run-app (:port (:options opts)))
-    :else (cli-opts-parsing-failure (map pr-str (:arguments opts)))
+(defn -main [& args]
+  (let [opts (parse-opts args cli-options)]
+    (cond
+      (not= (:errors opts) nil) (cli-opts-parsing-failure (:errors opts))
+      (:help (:options opts)) (show-usage (:summary opts))
+      (= (:arguments opts) ["smoke-test"]) (println "Smoke test passed")
+      (= (:arguments opts) []) (run-app (:port (:options opts)))
+      :else (cli-opts-parsing-failure (map pr-str (:arguments opts)))
+      )
     )
   )

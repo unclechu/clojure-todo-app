@@ -4,18 +4,19 @@ let sources = import nix/sources.nix; in
 , callPackage ? pkgs.callPackage
 , writeTextFile ? pkgs.writeTextFile
 , esc ? lib.escapeShellArg
-, makeWrapper ? pkgs.makeWrapper
-, symlinkJoin ? pkgs.symlinkJoin
+, mkShell ? pkgs.mkShell
 
 , dash ? pkgs.dash
+, findutils ? pkgs.findutils
+, jdk ? pkgs.jdk
 , clojure ? pkgs.clojure
 , clojure-lsp ? pkgs.clojure-lsp
 , clj-kondo ? pkgs.clj-kondo
 
 , clj2nix ? callPackage sources.clj2nix {}
 
-, cljdeps ? import ./deps.nix { inherit pkgs; }
-, classpaths ? cljdeps.makeClasspaths {}
+, backend-cljdeps ? import backend/deps.nix { inherit pkgs; }
+, backend-classpaths ? backend-cljdeps.makeClasspaths {}
 
 , backend-path ? ./backend
 , frontend-path ? ./frontend
@@ -48,18 +49,16 @@ let
     assert builtins.isPath path;
     builtins.filterSource (filter (toString path)) path;
 
-  backendSrc = src backend-path;
-
   name = "clojure-todo-app";
+  backendSrc = src backend-path;
+  backendMainClass = "clojure_todo_app.main";
 
-  executables = {
-    inherit dash clojure;
+  e = builtins.mapAttrs (n: v: "${v}/bin/${n}") {
+    inherit dash;
+    java = jdk;
   };
 
-  mkE = builtins.mapAttrs (n: v: "${v}/bin/${n}");
-  e = mkE executables;
-
-  mkChecker = x: lib.pipe x [
+  checkExecutables = lib.pipe e [
     (lib.mapAttrsToList (_: v: ''
       if [[ ! -f ${esc v} ]] || [[ ! -r ${esc v} ]] || [[ ! -x ${esc v} ]]
       then
@@ -70,74 +69,79 @@ let
     (builtins.concatStringsSep "\n")
   ];
 
-  backendRunScript = let n = "${name}-run-backend"; in writeTextFile {
+  backendBuiltClasses = pkgs.stdenv.mkDerivation {
+    name = "${name}-built-classes";
+    src = backendSrc;
+
+    nativeBuildInputs = [
+      findutils
+      jdk
+    ];
+
+    buildInputs = [];
+
+    checkPhase = ''
+      java -cp ${esc backend-classpaths}:build \
+        ${esc backendMainClass} smoke-test
+    '';
+
+    buildPhase = ''
+      mkdir build
+
+      (
+        set -eu || exit
+        FILES=$(cd src && find * -name '*.clj')
+        readarray -t MODULES <<< "$FILES"
+
+        for module in "''${MODULES[@]}"; do
+          module=''${module%.clj}
+          module=''${module//'/'/.}
+          module=''${module//_/-}
+
+          java -cp ${esc backend-classpaths}:"$src"/src \
+            -Dclojure.compile.path=build \
+            clojure.lang.Compile \
+            "$module"
+        done
+      )
+
+      eval -- "$checkPhase"
+    '';
+
+    installPhase = ''
+      mkdir -p -- "$out"
+      cp -r build/* -- "$out"
+    '';
+  };
+
+  backendRunScript = let n = "${name}-backend"; in writeTextFile {
     name = n;
     executable = true;
     destination = "/bin/${n}";
-    checkPhase = mkChecker e;
+    checkPhase = checkExecutables;
     text = ''
       #! ${e.dash}
-      ${esc e.clojure} -Scp ${classpaths} -M src/main.clj "$@"
+      exec ${esc e.java} \
+        -cp ${esc backend-classpaths}:${backendBuiltClasses} \
+        ${esc backendMainClass} "$@"
     '';
   };
-
-  wrappedBackendRunScript = symlinkJoin {
-    name = lib.getName backendRunScript;
-    paths = [ backendRunScript ];
-    nativeBuildInputs = [ makeWrapper ];
-
-    postBuild = ''
-      wrapProgram "$out"/bin/${esc (lib.getName backendRunScript)} \
-        --run ${esc "cd -- ${esc backendSrc}"}
-    '';
-  };
-
-  mainDerivation =
-    let
-      e = mkE {
-        ${lib.getName wrappedBackendRunScript} = wrappedBackendRunScript;
-      };
-
-      runBackend = e.${lib.getName wrappedBackendRunScript};
-    in
-    pkgs.stdenv.mkDerivation rec {
-      inherit name;
-      src = backendSrc;
-
-      nativeBuildInputs =
-        lib.optional with-clojure-lsp clojure-lsp
-        ++ lib.optional with-clj-kondo clj-kondo;
-
-      checkPhase = ''
-        ${mkChecker e}
-        mkdir tmp
-        HOME="$PWD"/tmp ${esc runBackend} smoke-test
-      '';
-
-      buildInputs = [
-        clojure
-      ];
-
-      buildPhase = ''
-        eval -- "$checkPhase"
-      '';
-
-      installPhase = ''
-        mkdir -p -- "$out"/bin
-        ln -s -- ${esc runBackend} "$out"/bin
-      '';
-    };
 in
 
-mainDerivation // {
+backendRunScript // rec {
   inherit clj2nix;
 
   env = pkgs.buildEnv {
     name = "${name}-env";
+    paths = shell.buildInputs;
+  };
 
-    paths =
-      mainDerivation.nativeBuildInputs
-      ++ mainDerivation.buildInputs
-      ++ [ clj2nix ];
+  shell = mkShell {
+    buildInputs =
+      [ clojure jdk ]
+      ++ backendBuiltClasses.nativeBuildInputs
+      ++ backendBuiltClasses.buildInputs
+      ++ lib.optional with-clojure-lsp clojure-lsp
+      ++ lib.optional with-clj-kondo clj-kondo;
   };
 }
