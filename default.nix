@@ -70,7 +70,7 @@ let
   ];
 
   backendBuiltClasses = pkgs.stdenv.mkDerivation {
-    name = "${name}-built-classes";
+    name = "${name}-backend-build.jar";
     src = backendSrc;
 
     nativeBuildInputs = [
@@ -103,14 +103,18 @@ let
             clojure.lang.Compile \
             "$module"
         done
+
+        cd build
+        CLASS_FILES=$(find * -name '*.class')
+        readarray -t CLASS_FILES_A <<< "$CLASS_FILES"
+        jar -cf build.jar "''${CLASS_FILES_A[@]}"
       )
 
       eval -- "$checkPhase"
     '';
 
     installPhase = ''
-      mkdir -p -- "$out"
-      cp -r build/* -- "$out"
+      cp -r build/build.jar -- "$out"
     '';
   };
 
@@ -122,7 +126,7 @@ let
     text = ''
       #! ${e.dash}
       exec ${esc e.java} \
-        -cp ${esc backend-classpaths}:${backendBuiltClasses} \
+        -cp ${esc backend-classpaths}:${esc backendBuiltClasses} \
         ${esc backendMainClass} "$@"
     '';
   };
