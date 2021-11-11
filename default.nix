@@ -69,8 +69,8 @@ let
     (builtins.concatStringsSep "\n")
   ];
 
-  backendBuiltClasses = pkgs.stdenv.mkDerivation {
-    name = "${name}-backend-build.jar";
+  backendJar = pkgs.stdenv.mkDerivation {
+    name = "${name}-backend.jar";
     src = backendSrc;
 
     nativeBuildInputs = [
@@ -89,7 +89,7 @@ let
       mkdir build
 
       (
-        set -eu || exit
+        set -u || exit
         FILES=$(cd src && find * -name '*.clj')
         readarray -t MODULES <<< "$FILES"
 
@@ -114,7 +114,7 @@ let
     '';
 
     installPhase = ''
-      cp -r build/build.jar -- "$out"
+      cp build/build.jar -- "$out"
     '';
   };
 
@@ -126,7 +126,7 @@ let
     text = ''
       #! ${e.dash}
       exec ${esc e.java} \
-        -cp ${esc backend-classpaths}:${esc backendBuiltClasses} \
+        -cp ${esc backend-classpaths}:${esc backendJar} \
         ${esc backendMainClass} "$@"
     '';
   };
@@ -143,8 +143,8 @@ backendRunScript // rec {
   shell = mkShell {
     buildInputs =
       [ clojure jdk ]
-      ++ backendBuiltClasses.nativeBuildInputs
-      ++ backendBuiltClasses.buildInputs
+      ++ backendJar.nativeBuildInputs
+      ++ backendJar.buildInputs
       ++ lib.optional with-clojure-lsp clojure-lsp
       ++ lib.optional with-clj-kondo clj-kondo;
   };
