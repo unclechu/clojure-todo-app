@@ -7,6 +7,7 @@ let sources = import nix/sources.nix; in
 , mkShell ? pkgs.mkShell
 
 , dash ? pkgs.dash
+, findutils ? pkgs.findutils
 , jdk ? pkgs.jdk
 , clojure ? pkgs.clojure
 , clojure-lsp ? pkgs.clojure-lsp
@@ -50,6 +51,7 @@ let
 
   name = "clojure-todo-app";
   backendSrc = src backend-path;
+  backendMainClass = "clojure_todo_app.main";
 
   e = builtins.mapAttrs (n: v: "${v}/bin/${n}") {
     inherit dash;
@@ -67,6 +69,51 @@ let
     (builtins.concatStringsSep "\n")
   ];
 
+  backendBuiltClasses = pkgs.stdenv.mkDerivation {
+    name = "${name}-built-classes";
+    src = backendSrc;
+
+    nativeBuildInputs = [
+      findutils
+      jdk
+    ];
+
+    buildInputs = [];
+
+    checkPhase = ''
+      java -cp ${esc backend-classpaths}:build \
+        ${esc backendMainClass} smoke-test
+    '';
+
+    buildPhase = ''
+      mkdir build
+
+      (
+        set -eu || exit
+        FILES=$(cd src && find * -name '*.clj')
+        readarray -t MODULES <<< "$FILES"
+
+        for module in "''${MODULES[@]}"; do
+          module=''${module%.clj}
+          module=''${module//'/'/.}
+          module=''${module//_/-}
+
+          java -cp ${esc backend-classpaths}:"$src"/src \
+            -Dclojure.compile.path=build \
+            clojure.lang.Compile \
+            "$module"
+        done
+      )
+
+      eval -- "$checkPhase"
+    '';
+
+    installPhase = ''
+      mkdir -p -- "$out"
+      cp -r build/* -- "$out"
+    '';
+  };
+
   backendRunScript = let n = "${name}-backend"; in writeTextFile {
     name = n;
     executable = true;
@@ -75,8 +122,8 @@ let
     text = ''
       #! ${e.dash}
       exec ${esc e.java} \
-        -cp ${esc backend-classpaths}:${esc backendSrc}/src \
-        clojure.main -m ${esc name}.main "$@"
+        -cp ${esc backend-classpaths}:${backendBuiltClasses} \
+        ${esc backendMainClass} "$@"
     '';
   };
 in
@@ -92,6 +139,8 @@ backendRunScript // rec {
   shell = mkShell {
     buildInputs =
       [ clojure jdk ]
+      ++ backendBuiltClasses.nativeBuildInputs
+      ++ backendBuiltClasses.buildInputs
       ++ lib.optional with-clojure-lsp clojure-lsp
       ++ lib.optional with-clj-kondo clj-kondo;
   };
