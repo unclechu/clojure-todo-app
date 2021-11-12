@@ -49,8 +49,8 @@ let repos = [
       inherit repos;
       artifactId = "commons-codec";
       groupId = "commons-codec";
-      sha512 = "d9586162b257386b5871e7e9ae255a38014a9efaeef5148de5e40a3b0200364dad8516bddd554352aa2e5337bec2cc11df88c76c4fdde96a40f3421aa60650d7";
-      version = "1.11";
+      sha512 = "da30a716770795fce390e4dd340a8b728f220c6572383ffef55bd5839655d5611fcc06128b2144f6cdcb36f53072a12ec80b04afee787665e7ad0b6e888a6787";
+      version = "1.15";
       
     };
     paths = [ src ];
@@ -135,6 +135,32 @@ let repos = [
   }
 
   rec {
+    name = "jackson-dataformat-cbor/com.fasterxml.jackson.dataformat";
+    src = fetchmaven {
+      inherit repos;
+      artifactId = "jackson-dataformat-cbor";
+      groupId = "com.fasterxml.jackson.dataformat";
+      sha512 = "575a00fec1760571403aaadbe0aa6c74f8bb01f40feae00741df6604e7c2bf199ac739a789bbd5d83af75ec6d9fcc55f5a1515b05aef33e0d3cc3046acad9e89";
+      version = "2.10.2";
+      
+    };
+    paths = [ src ];
+  }
+
+  rec {
+    name = "ring-json/ring";
+    src = fetchmaven {
+      inherit repos;
+      artifactId = "ring-json";
+      groupId = "ring";
+      sha512 = "1ecd3629fa35606ec0de31f11492031d354b2119549275bad374b73e29f809150edaa949ced6c14f125cad362b5a1195a4b26d2e85d88fd6dc07885b4562220a";
+      version = "0.5.1";
+      
+    };
+    paths = [ src ];
+  }
+
+  rec {
     name = "commons-io/commons-io";
     src = fetchmaven {
       inherit repos;
@@ -142,6 +168,19 @@ let repos = [
       groupId = "commons-io";
       sha512 = "4de22e2a50711f756a5542474395d8619dca0a8be0407b722605005a1167f8c306bc5eef7f0b8252f5508c817c1ceb759171e4e18d4eb9697dfdd809ac39673f";
       version = "2.6";
+      
+    };
+    paths = [ src ];
+  }
+
+  rec {
+    name = "jackson-core/com.fasterxml.jackson.core";
+    src = fetchmaven {
+      inherit repos;
+      artifactId = "jackson-core";
+      groupId = "com.fasterxml.jackson.core";
+      sha512 = "5055943790cea2c3abbacbe91e63634e6d2e977cd59b08ce102c0ee7d859995eb5d150d530da3848235b2b1b751a8df55cff2c33d43da695659248187ddf1bff";
+      version = "2.10.2";
       
     };
     paths = [ src ];
@@ -192,8 +231,8 @@ let repos = [
       inherit repos;
       artifactId = "ring-codec";
       groupId = "ring";
-      sha512 = "ea95b9da61885cb433cfb4f4d8f1efb70d105df6a5ff7493e8182df5402b9f762dd66613d882d54d117a7330d58f9fa46fc4227a9bebf94a509fd25ee427a7cb";
-      version = "1.1.2";
+      sha512 = "38b9775a794831b8afd8d66991a75aa5910cd50952c9035866bf9cc01353810aedafbc3f35d8f9e56981ebf9e5c37c00b968759ed087d2855348b3f46d8d0487";
+      version = "1.1.3";
       
     };
     paths = [ src ];
@@ -213,13 +252,39 @@ let repos = [
   }
 
   rec {
+    name = "cheshire/cheshire";
+    src = fetchmaven {
+      inherit repos;
+      artifactId = "cheshire";
+      groupId = "cheshire";
+      sha512 = "5b2a339f8d90951a80105729a080b841e0de671f576bfa164a78bccc08691d548cff6a7124224444f7b3a267c9aca69c18e347657f1d66e407167c9b5b8b52cb";
+      version = "5.10.0";
+      
+    };
+    paths = [ src ];
+  }
+
+  rec {
+    name = "tigris/tigris";
+    src = fetchmaven {
+      inherit repos;
+      artifactId = "tigris";
+      groupId = "tigris";
+      sha512 = "fdff4ef5e7175a973aaef98de4f37dee8e125fc711c495382e280aaf3e11341fe8925d52567ca60f3f1795511ade11bc23461c88959632dfae3cf50374d02bf6";
+      version = "0.1.2";
+      
+    };
+    paths = [ src ];
+  }
+
+  rec {
     name = "ring-core/ring";
     src = fetchmaven {
       inherit repos;
       artifactId = "ring-core";
       groupId = "ring";
-      sha512 = "e2a8d40973c8577b37c8ad1e558c3c37dee98e883d9f4e65a4d5898ed34b703b5a352afc7076bfc5bd5d7f0fbc0ec378ebcaf1a40f5eedcf49735eb4ba5109cd";
-      version = "1.8.1";
+      sha512 = "307c101d24fc73bedbdd90b9bcf5a718d22bddb6ef6dd8baba9adc13e2ff59ffd661737f04e77badb2f35413f304e129dc7a626fab87c1eec3ae388282cae191";
+      version = "1.9.2";
       
     };
     paths = [ src ];
@@ -233,6 +298,19 @@ let repos = [
       groupId = "medley";
       sha512 = "749ef43b5ea2cae7dc96db871cdd15c7b3c9cfbd96828c20ab08e67d39a5e938357d15994d8d413bc68678285d6c666f2a7296fbf305706d03b3007254e3c55c";
       version = "1.3.0";
+      
+    };
+    paths = [ src ];
+  }
+
+  rec {
+    name = "jackson-dataformat-smile/com.fasterxml.jackson.dataformat";
+    src = fetchmaven {
+      inherit repos;
+      artifactId = "jackson-dataformat-smile";
+      groupId = "com.fasterxml.jackson.dataformat";
+      sha512 = "8998346f7039df868f3387d219efa0c04fc022a948d098296f3d7ac3f7a9a82bde6ec4a8f83b11994ad50318b5aca37781faacb1f20a65ba2ecc6d6d6eb9468e";
+      version = "2.10.2";
       
     };
     paths = [ src ];
